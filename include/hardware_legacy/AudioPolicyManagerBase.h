@@ -48,7 +48,7 @@ namespace android_audio_legacy {
 #define SONIFICATION_RESPECTFUL_AFTER_MUSIC_DELAY 5000
 // Time in milliseconds during witch some streams are muted while the audio path
 // is switched
-#define MUTE_TIME_MS 2000
+#define MUTE_TIME_MS 500
 
 #define NUM_TEST_OUTPUTS 5
 
@@ -238,7 +238,9 @@ protected:
         static const VolumeCurvePoint sSpeakerMediaVolumeCurve[AudioPolicyManagerBase::VOLCNT];
         // volume curve for sonification strategy on speakers
         static const VolumeCurvePoint sSpeakerSonificationVolumeCurve[AudioPolicyManagerBase::VOLCNT];
+        static const VolumeCurvePoint sSpeakerSonificationVolumeCurveDrc[AudioPolicyManagerBase::VOLCNT];
         static const VolumeCurvePoint sDefaultSystemVolumeCurve[AudioPolicyManagerBase::VOLCNT];
+        static const VolumeCurvePoint sDefaultSystemVolumeCurveDrc[AudioPolicyManagerBase::VOLCNT];
         static const VolumeCurvePoint sHeadsetSystemVolumeCurve[AudioPolicyManagerBase::VOLCNT];
         static const VolumeCurvePoint sDefaultVoiceVolumeCurve[AudioPolicyManagerBase::VOLCNT];
         static const VolumeCurvePoint sSpeakerVoiceVolumeCurve[AudioPolicyManagerBase::VOLCNT];
@@ -493,12 +495,15 @@ protected:
 
         audio_io_handle_t selectOutputForEffects(const SortedVector<audio_io_handle_t>& outputs);
 
+        bool isNonOffloadableEffectEnabled();
+
         //
         // Audio policy configuration file parsing (audio_policy.conf)
         //
         static uint32_t stringToEnum(const struct StringToEnum *table,
                                      size_t size,
                                      const char *name);
+        static bool stringToBool(const char *value);
         static audio_output_flags_t parseFlagNames(char *name);
         static audio_devices_t parseDeviceNames(char *name);
         void loadSamplingRates(char *name, IOProfile *profile);
@@ -512,7 +517,7 @@ protected:
         void loadGlobalConfig(cnode *root);
         status_t loadAudioPolicyConfig(const char *path);
         void defaultAudioPolicyConfig(void);
-
+        static bool isVirtualInputDevice(audio_devices_t device);
 
         AudioPolicyClientInterface *mpClientInterface;  // audio policy client interface
         audio_io_handle_t mPrimaryOutput;              // primary output handle
@@ -552,6 +557,8 @@ protected:
         audio_devices_t mAttachedOutputDevices; // output devices always available on the platform
         audio_devices_t mDefaultOutputDevice; // output device selected by default at boot time
                                               // (must be in mAttachedOutputDevices)
+        bool mSpeakerDrcEnabled;// true on devices that use DRC on the DEVICE_CATEGORY_SPEAKER path
+                                // to boost soft sounds, used to adjust volume curves accordingly
 
         Vector <HwModule *> mHwModules;
 
@@ -576,7 +583,6 @@ private:
         // updates device caching and output for streams that can influence the
         //    routing of notifications
         void handleNotificationRoutingForStream(AudioSystem::stream_type stream);
-        static bool isVirtualInputDevice(audio_devices_t device);
 };
 
 };
